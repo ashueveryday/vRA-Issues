@@ -1,0 +1,54 @@
+
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterSolutionUser -url https://appliance-or-load-balancer-IP-or-FQDN/ -t vsphere.local -cu administrator -cp password -f "C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.data" -v 
+
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" MoveRegistrationDataToDb -s IaaS-SQL-server-IP-or-FQDN -d SQL-database-name -f "C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.data" -v 
+
+ "C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" MoveRegistrationDataToDb -s SQL-server-IP-or-FQDN -d SQL-database-name -su SQL-user -sp SQL-user-password -f "C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.data" -v 
+
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterEndpoint --EndpointAddress https://IaaS-Web-server-or-load-balancer-IP-or-FQDN/vcac --Endpoint ui -v
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterEndpoint --EndpointAddress https://IaaS-Web-server-or-load-balancer-IP-or-FQDN /WAPI --Endpoint wapi -v  
+
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterEndpoint --EndpointAddress https://IaaS-Web-server-or-load-balancer-IP-or-FQDN/repository --Endpoint repo -v
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterEndpoint --EndpointAddress https://IaaS-Web-server-or-load-balancer-IP-or-FQDN/WAPI/api/status --Endpoint status -v 
+[‎21-‎08-‎2018 13:03] Ashutosh Yadav: 
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterCatalogTypesAsync -v 
+
+
+
+
+
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterEndpoint --EndpointAddress https://IaaS-Web-server-or-load-balancer-IP-or-FQDN/vcac --Endpoint ui -v
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterEndpoint --EndpointAddress https://IaaS-Web-server-or-load-balancer-IP-or-FQDN /WAPI --Endpoint wapi -v 
+
+
+"C:\Program Files (x86)\VMware\vCAC\Server\Model Manager Data\Cafe\Vcac-Config.exe" RegisterCatalogTypesAsync -v
+
+
+	
+	
+	
+1. Collect IDs for the service
+    select id, name, lastsync from cat_provider where name ='{com.vmware.csp.component.iaas.proxy.provider@iaasservice.name}';
+
+**DO NOT continue unless there are exactly 2 IaaS Service providers listed from the select query in Step 1**
+
+2. Verified the correct ID was set for the iaas-service
+    select id, name from service_info where name = 'iaas-service';
+
+3. Updated the database to link various components to the new iaas-service id.
+    select * from cat_catalogitem where provider_id = ‘<new ID>’;
+    delete from cat_catalogitem where provider_id = ‘<new ID>’;
+    update cat_catalogitem set provider_id = ‘<new ID>’ where provider_id = '<old ID>';
+    update cat_catalogitemtype set provider_id = ‘<new ID>’ where provider_id = '<old ID>';
+    update cat_resource set provider_id = ‘<new ID>’ where provider_id = '<old ID>';
+    update cat_request set provider_id = ‘<new ID>’ where provider_id = '<old ID>';
+    update cat_requestcomponent set providerid = '<new ID> where providerid = '<old ID>';
+    update comp_bprequest set callbackserviceid=’<new ID>’ where callbackserviceid='<old ID>';
+    update comp_component_res set provider_id=’<new ID>’ where provider_id='<old ID>';
+    update comp_componenttype set serviceid=’<new ID>’ where serviceid='<old ID>';
+    update comp_comprequest set provider_id=’<new ID>’ where provider_id='<old ID>';
+    select id from comp_deployment where eff_schema like '%<old ID>%';
+    update comp_deployment set eff_schema = replace(eff_schema,'<old ID>', ‘<new ID>’) where eff_schema like '%<old ID>%';
+    select id from o11n_workflowrunstate where requestdata like '%<old ID>%';
+    update o11n_workflowrunstate set requestdata=replace(requestdata, '<old ID>','<new ID>') where requestdata like '%<old ID>%';
+    delete from cat_provider where id='<old ID>';
